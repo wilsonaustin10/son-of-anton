@@ -64,7 +64,7 @@ export default function VoiceAgent() {
   return (
     <div className="min-h-screen bg-gray-50 p-4">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">OpenAI Realtime Voice Agent</h1>
+        <h1 className="text-3xl font-bold text-gray-900 mb-8">Anton - Personal AI Assistant</h1>
         
         {/* Connection Status */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
@@ -72,7 +72,7 @@ export default function VoiceAgent() {
             <div>
               <h2 className="text-xl font-semibold text-gray-800">Connection Status</h2>
               <p className="text-sm text-gray-600 mt-1">
-                {isConnected ? 'Connected to OpenAI Realtime API' : 'Not connected'}
+                {isConnected ? 'Anton is ready to assist you' : 'Anton is offline'}
               </p>
             </div>
             <div className="flex items-center space-x-2">
@@ -124,7 +124,7 @@ export default function VoiceAgent() {
                 }`}
               >
                 <p className="text-sm font-medium text-gray-600 mb-1">
-                  {transcript.speaker === 'user' ? 'You' : 'Assistant'}
+                  {transcript.speaker === 'user' ? 'Austin' : 'Anton'}
                 </p>
                 <p className="text-gray-800">{transcript.text}</p>
                 <p className="text-xs text-gray-500 mt-1">
@@ -135,14 +135,14 @@ export default function VoiceAgent() {
             
             {currentUserTranscript && (
               <div className="p-3 rounded-lg bg-blue-50 ml-auto max-w-[80%] opacity-70">
-                <p className="text-sm font-medium text-gray-600 mb-1">You (speaking...)</p>
+                <p className="text-sm font-medium text-gray-600 mb-1">Austin (speaking...)</p>
                 <p className="text-gray-800">{currentUserTranscript}</p>
               </div>
             )}
             
             {currentAssistantTranscript && (
               <div className="p-3 rounded-lg bg-gray-50 mr-auto max-w-[80%] opacity-70">
-                <p className="text-sm font-medium text-gray-600 mb-1">Assistant (speaking...)</p>
+                <p className="text-sm font-medium text-gray-600 mb-1">Anton (speaking...)</p>
                 <p className="text-gray-800">{currentAssistantTranscript}</p>
               </div>
             )}

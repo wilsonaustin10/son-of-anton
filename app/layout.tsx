@@ -5,8 +5,8 @@ import './globals.css'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'OpenAI Realtime Voice Agent',
-  description: 'Real-time voice conversation with OpenAI',
+  title: 'Anton - Personal AI Assistant',
+  description: 'Anton, your advanced personal assistant modeled after Jarvis',
 }
 
 export default function RootLayout({

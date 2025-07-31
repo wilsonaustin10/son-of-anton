@@ -1,10 +1,15 @@
-# OpenAI Realtime Voice Agent
+# Anton - Personal AI Assistant
 
-A real-time voice conversation agent built with Next.js, WebRTC, and OpenAI's Realtime API.
+Anton is a highly advanced personal AI assistant modeled after Jarvis from Iron Man, built with Next.js, WebRTC, and OpenAI's Realtime API.
 
 ## Features
 
-- Real-time voice conversations with OpenAI's GPT-4
+- Real-time voice conversations with Anton, your personal AI assistant
+- Advanced capabilities including:
+  - Technical project support and brainstorming
+  - Sales strategies and go-to-market planning
+  - Market analysis and strategic guidance
+  - Multi-disciplinary reasoning and problem-solving
 - WebRTC-based audio streaming for low latency
 - Automatic speech recognition (STT) and text-to-speech (TTS)
 - Live transcription display
@@ -37,10 +42,14 @@ A real-time voice conversation agent built with Next.js, WebRTC, and OpenAI's Re
 
 ## Usage
 
-1. Click "Connect" to establish a connection with OpenAI's Realtime API
+1. Click "Connect" to wake up Anton
 2. Allow microphone access when prompted
-3. Start speaking naturally - the AI will respond in real-time
-4. View live transcriptions of both your speech and the AI's responses
+3. Start speaking naturally - Anton will respond with:
+   - Clarifying questions to understand your needs
+   - Structured analysis and step-by-step breakdowns
+   - Innovative ideas and alternative approaches
+   - Strategic guidance and actionable insights
+4. View live transcriptions of your conversation
 5. Click "Disconnect" to end the session
 
 ## Architecture
