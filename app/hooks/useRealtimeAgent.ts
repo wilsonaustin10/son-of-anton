@@ -8,8 +8,11 @@ export interface RealtimeEvent {
 
 export interface UseRealtimeAgentOptions {
   onEvent?: (event: RealtimeEvent) => void
-  onTranscript?: (transcript: string, isFinal: boolean) => void
+  onTranscript?: (transcript: string, isFinal: boolean, speaker: 'austin' | 'anton') => void
   onError?: (error: Error) => void
+  onToolCall?: (toolName: string, args: any, callId: string) => void
+  onToolResult?: (result: any, callId: string) => void
+  conversationId?: string
 }
 
 export function useRealtimeAgent(options: UseRealtimeAgentOptions = {}) {
@@ -22,7 +25,8 @@ export function useRealtimeAgent(options: UseRealtimeAgentOptions = {}) {
   const localStreamRef = useRef<MediaStream | null>(null)
   const audioElementRef = useRef<HTMLAudioElement | null>(null)
   
-  const { onEvent, onTranscript, onError } = options
+  const { onEvent, onTranscript, onError, onToolCall, onToolResult, conversationId } = options
+  const [pendingToolCalls, setPendingToolCalls] = useState<Map<string, any>>(new Map())
 
   // Get ephemeral token from API
   const getSessionToken = async () => {
@@ -62,13 +66,26 @@ export function useRealtimeAgent(options: UseRealtimeAgentOptions = {}) {
           
         case 'conversation.item.created':
           if (message.item?.role === 'user' && message.item?.formatted?.transcript) {
-            onTranscript?.(message.item.formatted.transcript, false)
+            onTranscript?.(message.item.formatted.transcript, false, 'austin')
           }
           break
           
         case 'conversation.item.input_audio_transcription.completed':
           if (message.transcript) {
-            onTranscript?.(message.transcript, true)
+            onTranscript?.(message.transcript, true, 'austin')
+            // Store user message in memory
+            if (conversationId) {
+              fetch('/api/memory', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  conversation_id: conversationId,
+                  speaker: 'austin',
+                  content: message.transcript,
+                  metadata: { event_type: 'input_audio_transcription' }
+                })
+              }).catch(err => console.error('Failed to store memory:', err))
+            }
           }
           break
           
@@ -78,6 +95,37 @@ export function useRealtimeAgent(options: UseRealtimeAgentOptions = {}) {
           
         case 'response.audio_transcript.delta':
           // Handle streaming audio transcript
+          if (message.delta) {
+            onTranscript?.(message.delta, false, 'anton')
+          }
+          break
+          
+        case 'response.audio_transcript.done':
+          // Store Anton's complete response
+          if (message.transcript && conversationId) {
+            onTranscript?.(message.transcript, true, 'anton')
+            fetch('/api/memory', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                conversation_id: conversationId,
+                speaker: 'anton',
+                content: message.transcript,
+                metadata: { event_type: 'response_audio_transcript' }
+              })
+            }).catch(err => console.error('Failed to store memory:', err))
+          }
+          break
+          
+        case 'response.function_call_arguments.done':
+          // Handle function call from the model
+          if (message.call_id && message.name && message.arguments) {
+            console.log('Function call:', message.name, message.arguments)
+            onToolCall?.(message.name, message.arguments, message.call_id)
+            
+            // Execute the tool call
+            handleToolExecution(message.name, message.arguments, message.call_id)
+          }
           break
           
         case 'error':
@@ -88,7 +136,67 @@ export function useRealtimeAgent(options: UseRealtimeAgentOptions = {}) {
     } catch (err) {
       console.error('Failed to parse data channel message:', err)
     }
-  }, [onEvent, onTranscript, onError])
+  }, [onEvent, onTranscript, onError, onToolCall, conversationId])
+  
+  // Handle tool execution
+  const handleToolExecution = useCallback(async (
+    toolName: string,
+    args: string,
+    callId: string
+  ) => {
+    try {
+      // Parse arguments
+      const parsedArgs = JSON.parse(args)
+      
+      // Call the tool execution API
+      const response = await fetch('/api/tools/execute', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          toolName,
+          args: parsedArgs,
+          callId,
+          conversationId
+        })
+      })
+      
+      if (!response.ok) {
+        throw new Error('Tool execution failed')
+      }
+      
+      const result = await response.json()
+      onToolResult?.(result, callId)
+      
+      // Send the result back to the Realtime API
+      if (dataChannelRef.current && dataChannelRef.current.readyState === 'open') {
+        dataChannelRef.current.send(JSON.stringify({
+          type: 'conversation.item.create',
+          item: {
+            type: 'function_call_output',
+            call_id: callId,
+            output: JSON.stringify(result)
+          }
+        }))
+      }
+    } catch (error) {
+      console.error('Tool execution error:', error)
+      
+      // Send error result back
+      if (dataChannelRef.current && dataChannelRef.current.readyState === 'open') {
+        dataChannelRef.current.send(JSON.stringify({
+          type: 'conversation.item.create',
+          item: {
+            type: 'function_call_output',
+            call_id: callId,
+            output: JSON.stringify({
+              success: false,
+              error: error instanceof Error ? error.message : 'Unknown error'
+            })
+          }
+        }))
+      }
+    }
+  }, [conversationId, onToolResult])
 
   // Setup data channel
   const setupDataChannel = useCallback((pc: RTCPeerConnection) => {

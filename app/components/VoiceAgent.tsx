@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRealtimeAgent, RealtimeEvent } from '../hooks/useRealtimeAgent'
 
 export default function VoiceAgent() {
-  const [transcripts, setTranscripts] = useState<Array<{ text: string; speaker: 'austin' | 'anton'; timestamp: Date }>>([])
+  const [transcripts, setTranscripts] = useState<Array<{ text: string; speaker: 'austin' | 'anton'; timestamp: Date; type?: 'message' | 'tool' }>>([])
   const [currentUserTranscript, setCurrentUserTranscript] = useState('')
   const [currentAssistantTranscript, setCurrentAssistantTranscript] = useState('')
   const [events, setEvents] = useState<RealtimeEvent[]>([])
@@ -13,6 +13,7 @@ export default function VoiceAgent() {
   const [recentMemories, setRecentMemories] = useState<any[]>([])
   const [isSpeaking, setIsSpeaking] = useState(false)
   const [isListening, setIsListening] = useState(false)
+  const [activeToolCall, setActiveToolCall] = useState<{ name: string; status: 'running' | 'completed' | 'failed' } | null>(null)
   
   // Generate a new conversation ID when component mounts
   useEffect(() => {
@@ -78,6 +79,19 @@ export default function VoiceAgent() {
     },
     onError: (err) => {
       console.error('Voice agent error:', err)
+    },
+    onToolCall: (toolName, args, callId) => {
+      setActiveToolCall({ name: toolName, status: 'running' })
+      setTranscripts(prev => [...prev, {
+        text: `🔧 Using ${toolName}...`,
+        speaker: 'anton',
+        timestamp: new Date(),
+        type: 'tool'
+      }])
+    },
+    onToolResult: (result, callId) => {
+      setActiveToolCall(prev => prev ? { ...prev, status: result.success ? 'completed' : 'failed' } : null)
+      setTimeout(() => setActiveToolCall(null), 2000)
     },
   })
 
@@ -178,6 +192,7 @@ export default function VoiceAgent() {
         <p className="text-gray-400 text-xl font-light tracking-wide">
           {isConnecting ? 'Connecting...' : 
            isConnected ? (
+             activeToolCall ? `${activeToolCall.name} ${activeToolCall.status === 'running' ? '⚡' : activeToolCall.status === 'completed' ? '✓' : '✗'}` :
              isSpeaking ? 'Anton is speaking' : 
              isListening ? 'Listening...' : 
              'Connected'
@@ -255,13 +270,15 @@ export default function VoiceAgent() {
                     <div
                       key={index}
                       className={`p-5 rounded-2xl transition-all hover:scale-[1.02] ${
-                        transcript.speaker === 'austin'
+                        transcript.type === 'tool'
+                          ? 'bg-gradient-to-r from-amber-900/50 to-orange-800/50 text-amber-200 border border-amber-700/30'
+                          : transcript.speaker === 'austin'
                           ? 'bg-gradient-to-r from-blue-900/50 to-blue-800/50 text-blue-200 border border-blue-700/30'
                           : 'bg-gradient-to-r from-purple-900/50 to-purple-800/50 text-purple-200 border border-purple-700/30'
                       }`}
                     >
                       <p className="text-sm font-semibold mb-2 opacity-80">
-                        {transcript.speaker === 'austin' ? 'You' : 'Anton'}
+                        {transcript.type === 'tool' ? 'Tool' : transcript.speaker === 'austin' ? 'You' : 'Anton'}
                       </p>
                       <p className="text-lg font-light leading-relaxed">{transcript.text}</p>
                       <p className="text-xs opacity-40 mt-3">

@@ -10,6 +10,11 @@ Anton is a highly advanced personal AI assistant modeled after Jarvis from Iron 
   - Sales strategies and go-to-market planning
   - Market analysis and strategic guidance
   - Multi-disciplinary reasoning and problem-solving
+- **Long-term memory** powered by Supabase and pgvector:
+  - Automatic conversation storage with embeddings
+  - Semantic search for relevant past conversations
+  - Session summaries with key topics and action items
+  - Context-aware responses based on conversation history
 - WebRTC-based audio streaming for low latency
 - Automatic speech recognition (STT) and text-to-speech (TTS)
 - Live transcription display
@@ -19,6 +24,7 @@ Anton is a highly advanced personal AI assistant modeled after Jarvis from Iron 
 
 - Node.js 18+ installed
 - OpenAI API key with access to the Realtime API
+- Supabase project with pgvector extension enabled
 
 ## Setup
 
@@ -27,18 +33,29 @@ Anton is a highly advanced personal AI assistant modeled after Jarvis from Iron 
    npm install
    ```
 
-2. Configure your OpenAI API key:
-   - Copy `.env.local` and add your API key:
+2. Configure your environment variables in `.env.local`:
    ```
+   # OpenAI API Key
    OPENAI_API_KEY=your-openai-api-key-here
+   
+   # Supabase Configuration
+   NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
+   SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
    ```
 
-3. Start the development server:
+3. Set up Supabase database:
+   - Go to your Supabase project dashboard
+   - Navigate to Database > Extensions and enable "vector" extension
+   - Go to SQL Editor and run the migration from `supabase/migrations/20240801_create_memories_table.sql`
+   - See `SETUP_DATABASE.md` for detailed instructions
+
+4. Start the development server:
    ```bash
    npm run dev
    ```
 
-4. Open [http://localhost:3000](http://localhost:3000) in your browser
+5. Open [http://localhost:3000](http://localhost:3000) in your browser
 
 ## Usage
 
@@ -58,6 +75,11 @@ Anton is a highly advanced personal AI assistant modeled after Jarvis from Iron 
 - **WebRTC**: Direct peer connection to OpenAI for minimal latency
 - **Authentication**: Ephemeral tokens minted server-side for security
 - **Audio Processing**: Browser-native echo cancellation and noise suppression
+- **Memory System**: 
+  - Supabase with pgvector for vector storage and similarity search
+  - OpenAI embeddings for semantic search capabilities
+  - Automatic conversation summarization
+  - Context injection into system prompts
 
 ## Security
 
